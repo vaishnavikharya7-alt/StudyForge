@@ -51,3 +51,25 @@ StudyForge is a complete, all-in-one study management platform that helps studen
 - Font Awesome Icons
 
 ## 📁 File Structure
+studyforge/
+├── index.html # Complete application (single file)
+└── README.md # Documentation 
+
+## 🎯 Perfect For
+- JEE / NEET aspirants
+- UPSC candidates
+- School/College students
+- Any exam preparation
+
+## 🔧 Installation
+
+### Option 1: Direct Download
+1. Download `index.html`
+2. Open in any modern browser
+3. Start planning!
+
+### Option 2: Clone Repository
+```bash
+git clone https://github.com/your-username/studyforge.git
+cd studyforge
+open index.html
