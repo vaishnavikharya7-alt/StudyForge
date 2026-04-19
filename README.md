@@ -70,6 +70,6 @@ studyforge/
 
 ### Option 2: Clone Repository
 ```bash
-git clone https://github.com/your-username/studyforge.git
+git clone https://github.com/vaishnavikharya7-alt/StudyForge
 cd studyforge
 open index.html
