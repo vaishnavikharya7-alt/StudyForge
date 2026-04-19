@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyForge — AI Study Planner with Timer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --bg:#070a07;--bg2:#0d120d;--card:#111a11;--card2:#162016;
+  --border:#1e2e1e;--fg:#e8efe8;--muted:#6b7f6b;
+  --accent:#d4a24e;--accentG:rgba(212,162,78,.1);
+  --sage:#6b9e6b;--sageG:rgba(107,158,107,.1);
+  --red:#c9544a;--redG:rgba(201,84,74,.08);
+  --teal:#4abfa5;--tealG:rgba(74,191,165,.08);
+  --green:#5cb85c;--greenG:rgba(92,184,92,.08);
+  --warn:#e8b830;--danger:#d44;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden}
+h1,h2,h3,h4,h5{font-family:'Space Grotesk',sans-serif}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.glass{background:rgba(17,26,17,.8);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px}
+.glass-s{background:rgba(17,26,17,.55);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:11px}
+
+.btn-p{background:linear-gradient(135deg,var(--accent),#b8882e);color:#070a07;font-weight:600;padding:12px 28px;border-radius:11px;border:none;cursor:pointer;font-family:'Space Grotesk';font-size:.92rem;transition:all .25s;display:inline-flex;align-items:center;gap:7px}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(212,162,78,.3)}.btn-p:active{transform:translateY(0)}.btn-p:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+
+.btn-g{background:transparent;color:var(--fg);font-weight:500;padding:10px 20px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-family:'Space Grotesk';font-size:.88rem;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-g:hover{border-color:var(--sage);color:var(--sage);background:var(--sageG)}
+
+.btn-s{background:var(--sageG);color:var(--sage);font-weight:500;padding:8px 16px;border-radius:9px;border:1px solid rgba(107,158,107,.2);cursor:pointer;font-family:'Space Grotesk';font-size:.82rem;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-s:hover{background:rgba(107,158,107,.15);border-color:var(--sage)}
+
+.btn-d{background:var(--redG);color:var(--red);font-weight:500;padding:8px 16px;border-radius:9px;border:1px solid rgba(201,84,74,.2);cursor:pointer;font-family:'Space Grotesk';font-size:.82rem;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-d:hover{background:rgba(201,84,74,.15);border-color:var(--red)}
+
+.inp{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 15px;color:var(--fg);font-family:'DM Sans';font-size:.9rem;width:100%;outline:none;transition:border .2s,box-shadow .2s}
+.inp:focus{border-color:var(--sage);box-shadow:0 0 0 3px var(--sageG)}.inp::placeholder{color:var(--muted)}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath fill='%236b7f6b' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+select.inp option{background:var(--card);color:var(--fg)}
+
+.tag{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:6px;font-size:.7rem;font-weight:500}
+.tag-easy{background:var(--greenG);color:var(--green);border:1px solid rgba(92,184,92,.15)}
+.tag-medium{background:rgba(232,184,48,.08);color:var(--warn);border:1px solid rgba(232,184,48,.15)}
+.tag-hard{background:var(--redG);color:var(--red);border:1px solid rgba(201,84,74,.15)}
+
+.prog-t{background:var(--bg);border-radius:5px;height:6px;overflow:hidden}
+.prog-f{height:100%;border-radius:5px;transition:width .7s cubic-bezier(.22,1,.36,1)}
+
+/* Timer styles */
+.timer-circle{width:260px;height:260px;border-radius:50%;background:linear-gradient(135deg,var(--card),var(--bg));border:3px solid var(--accent);box-shadow:0 0 40px rgba(212,162,78,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto}
+.timer-display{font-size:3.8rem;font-weight:800;font-family:'Space Grotesk',monospace;letter-spacing:4px;color:var(--accent)}
+.timer-label{font-size:.8rem;color:var(--muted);margin-top:8px}
+.timer-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}
+.timer-preset{display:flex;gap:8px;justify-content:center;margin-top:20px}
+
+/* Pages */
+.view{display:none;min-height:100vh}.view.active{display:block}
+
+/* Landing */
+.hero-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;animation:orbF 10s ease-in-out infinite alternate}
+@keyframes orbF{0%{transform:translate(0,0) scale(1)}100%{transform:translate(20px,-15px) scale(1.08)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slideR{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+.fade-up{animation:fadeUp .6s ease both}
+.slide-r{animation:slideR .5s ease both}
+
+/* Auth */
+.auth-card{max-width:420px;margin:0 auto}
+
+/* Planner steps */
+.step{display:none}.step.active{display:block}
+.step-ind{display:flex;align-items:center;gap:0}
+.step-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;border:2px solid var(--border);color:var(--muted);transition:all .3s;flex-shrink:0}
+.step-dot.done{border-color:var(--sage);color:var(--sage);background:var(--sageG)}
+.step-dot.now{border-color:var(--accent);color:#070a07;background:var(--accent)}
+.step-line{height:2px;flex:1;background:var(--border);transition:background .3s}
+.step-line.done{background:var(--sage)}
+
+/* Schedule */
+.day-card{border-left:3px solid var(--sage);transition:all .2s}
+.day-card:hover{border-left-color:var(--accent)}
+.sess-item{padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg);transition:all .2s;cursor:pointer;display:flex;align-items:center;gap:10px}
+.sess-item:hover{border-color:#2a3e2a;background:var(--card2)}
+.sess-item.completed{opacity:.45;border-color:rgba(92,184,92,.2)}.sess-item.completed .sess-t{text-decoration:line-through}
+.sess-item.break-item{opacity:.4;border-style:dashed;cursor:default}
+
+/* Checklist */
+.check-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg);transition:all .2s;cursor:pointer}
+.check-item:hover{border-color:#2a3e2a;background:var(--card2)}
+.check-item.done{border-color:rgba(92,184,92,.2);background:var(--greenG)}
+.check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.check-item.done .check-box{background:var(--sage);border-color:var(--sage)}
+
+/* Toast */
+.toast-c{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:12px 18px;border-radius:11px;font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:8px;animation:fadeUp .3s ease;max-width:360px;border:1px solid var(--border);background:var(--card);pointer-events:auto}
+.toast.out{animation:fadeUp .25s ease reverse forwards}
+
+/* Modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-ov.open{opacity:1;pointer-events:auto}
+.modal-ov.open .modal-c{transform:scale(1);opacity:1}
+.modal-c{transform:scale(.96);opacity:0;transition:all .3s cubic-bezier(.22,1,.36,1)}
+
+/* Dashboard nav */
+.dash-nav{display:flex;align-items:center;gap:4px;padding:4px;border-radius:12px;background:var(--bg);border:1px solid var(--border);flex-wrap:wrap}
+.dash-tab{padding:8px 16px;border-radius:9px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-family:'Space Grotesk';font-size:.82rem;font-weight:500;transition:all .2s;white-space:nowrap}
+.dash-tab.on{background:var(--sageG);color:var(--sage);border:1px solid rgba(107,158,107,.2)}
+.dash-tab:not(.on):hover{color:var(--fg)}
+.dash-panel{display:none}.dash-panel.active{display:block}
+
+/* Tip card */
+.tip-card{padding:14px 16px;border-radius:11px;border-left:3px solid var(--teal);background:var(--tealG)}
+
+@media(max-width:768px){
+  .hero-t{font-size:2.4rem!important}
+  .feat-grid{grid-template-columns:1fr!important}
+  .dash-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .schedule-grid{grid-template-columns:1fr!important}
+  .timer-circle{width:200px;height:200px}
+  .timer-display{font-size:2.8rem}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="toast-c" id="toastC"></div>
+
+<!-- ==================== LANDING PAGE ==================== -->
+<div class="view active" id="viewLanding">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2.5 no-underline">
+        <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:13px"></i></div>
+        <span style="font-family:'Space Grotesk';font-weight:700;font-size:1rem;color:var(--fg)">StudyForge</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <button class="btn-g" onclick="showView('viewAuth','login')" style="padding:8px 18px;font-size:.85rem">Log In</button>
+        <button class="btn-p" onclick="showView('viewAuth','signup')" style="padding:8px 20px;font-size:.85rem">Sign Up Free</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="relative min-h-screen flex items-center justify-center px-5 pt-16" style="overflow:hidden">
+    <div class="hero-orb" style="width:400px;height:400px;background:var(--sage);top:5%;left:-8%"></div>
+    <div class="hero-orb" style="width:300px;height:300px;background:var(--accent);bottom:10%;right:-5%;animation-delay:3s;animation-duration:12s"></div>
+    <div class="hero-orb" style="width:180px;height:180px;background:var(--teal);top:55%;left:40%;opacity:.15;animation-delay:5s"></div>
+
+    <div class="relative z-10 text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 glass-s px-4 py-2 mb-7 fade-up" style="font-size:.82rem;color:var(--muted)">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>
+        AI-powered study planning + Pomodoro Timer
+      </div>
+      <h1 class="hero-t" style="font-size:3.6rem;font-weight:700;line-height:1.07;letter-spacing:-.03em;margin-bottom:20px">
+        Study Smarter,<br>
+        <span style="background:linear-gradient(135deg,var(--sage),var(--teal),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Score Higher</span>
+      </h1>
+      <p style="font-size:1.08rem;color:var(--muted);line-height:1.7;max-width:500px;margin:0 auto 36px">
+        AI-generated study plans + built-in Pomodoro timer to track your focus sessions. Enter your exam, subjects, and let AI build your roadmap.
+      </p>
+      <div class="flex items-center justify-center gap-4 flex-wrap">
+        <button class="btn-p" onclick="showView('viewAuth','signup')" style="padding:15px 36px;font-size:1rem">
+          Create Free Plan <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <a href="#features" class="btn-g" style="text-decoration:none;padding:15px 28px;font-size:1rem">
+          <i class="fa-solid fa-play" style="font-size:.8rem"></i> See How It Works
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-6 mt-14 flex-wrap" style="font-size:.85rem;color:var(--muted)">
+        <span><i class="fa-solid fa-users" style="color:var(--sage);margin-right:4px"></i>12,400+ students</span>
+        <span><i class="fa-solid fa-star" style="color:var(--accent);margin-right:4px"></i>4.8 rating</span>
+        <span><i class="fa-solid fa-clock" style="color:var(--teal);margin-right:4px"></i>Built-in Timer</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="features" class="px-5 py-24 max-w-6xl mx-auto">
+    <div class="text-center mb-14">
+      <h2 style="font-size:2.2rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px">Everything You Need to Succeed</h2>
+      <p style="color:var(--muted);max-width:460px;margin:0 auto;font-size:.95rem">AI planning + Focus timer + Progress tracking — all in one calm workspace.</p>
+    </div>
+    <div class="feat-grid grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="glass p-6"><div style="width:44px;height:44px;border-radius:12px;background:var(--accentG);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><i class="fa-solid fa-brain" style="color:var(--accent);font-size:1.1rem"></i></div><h3 style="font-size:1.05rem;font-weight:600;margin-bottom:6px">AI Schedule Generator</h3><p style="font-size:.88rem;color:var(--muted);line-height:1.6">Personalized day-wise plan with smart revision days.</p></div>
+      <div class="glass p-6"><div style="width:44px;height:44px;border-radius:12px;background:var(--sageG);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><i class="fa-solid fa-hourglass-half" style="color:var(--sage);font-size:1.1rem"></i></div><h3 style="font-size:1.05rem;font-weight:600;margin-bottom:6px">Pomodoro Timer</h3><p style="font-size:.88rem;color:var(--muted);line-height:1.6">25-min focus sessions with breaks. Track your study time.</p></div>
+      <div class="glass p-6"><div style="width:44px;height:44px;border-radius:12px;background:var(--tealG);display:flex;align-items:center;justify-content:center;margin-bottom:14px"><i class="fa-solid fa-list-check" style="color:var(--teal);font-size:1.1rem"></i></div><h3 style="font-size:1.05rem;font-weight:600;margin-bottom:6px">Daily Progress Tracker</h3><p style="font-size:.88rem;color:var(--muted);line-height:1.6">Check off tasks, watch progress bar fill up, stay motivated.</p></div>
+    </div>
+  </section>
+
+  <section class="px-5 py-20 max-w-4xl mx-auto">
+    <div class="text-center mb-14"><h2 style="font-size:2rem;font-weight:700;margin-bottom:8px">How It Works</h2><p style="color:var(--muted);font-size:.92rem">Three steps to a stress-free study plan</p></div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="text-center"><div style="width:52px;height:52px;border-radius:50%;background:var(--accentG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-family:'Space Grotesk';font-weight:700;font-size:1.2rem;color:var(--accent)">1</div><h4 style="font-weight:600;margin-bottom:6px">Enter Your Details</h4><p style="font-size:.85rem;color:var(--muted)">Exam date, subjects, difficulty, daily hours.</p></div>
+      <div class="text-center"><div style="width:52px;height:52px;border-radius:50%;background:var(--sageG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-family:'Space Grotesk';font-weight:700;font-size:1.2rem;color:var(--sage)">2</div><h4 style="font-weight:600;margin-bottom:6px">AI Generates Your Plan</h4><p style="font-size:.85rem;color:var(--muted)">Balanced schedule with revision days.</p></div>
+      <div class="text-center"><div style="width:52px;height:52px;border-radius:50%;background:var(--tealG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-family:'Space Grotesk';font-weight:700;font-size:1.2rem;color:var(--teal)">3</div><h4 style="font-weight:600;margin-bottom:6px">Track & Use Timer</h4><p style="font-size:.85rem;color:var(--muted)">Check tasks and use Pomodoro to stay focused.</p></div>
+    </div>
+  </section>
+
+  <section class="px-5 py-20">
+    <div class="max-w-2xl mx-auto glass p-10 text-center" style="border-color:rgba(107,158,107,.2)">
+      <h2 style="font-size:1.8rem;font-weight:700;margin-bottom:10px">Ready to Plan Your Success?</h2>
+      <p style="color:var(--muted);font-size:.95rem;margin-bottom:28px">Join thousands of students studying smarter with AI + Pomodoro.</p>
+      <button class="btn-p" onclick="showView('viewAuth','signup')" style="padding:15px 40px;font-size:1rem">Get Started Free <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+  </section>
+
+  <footer class="px-5 py-8" style="border-top:1px solid var(--border)">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2"><div style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:10px"></i></div><span style="font-family:'Space Grotesk';font-weight:600;font-size:.85rem">StudyForge</span></div>
+      <p style="font-size:.78rem;color:var(--muted)">Calming study planning + Pomodoro timer, powered by AI.</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ==================== AUTH PAGE ==================== -->
+<div class="view" id="viewAuth">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
+      <a href="#" onclick="showView('viewLanding');return false" class="flex items-center gap-2.5 no-underline"><div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:13px"></i></div><span style="font-family:'Space Grotesk';font-weight:700;font-size:1rem;color:var(--fg)">StudyForge</span></a>
+      <button class="btn-g" onclick="showView('viewLanding')" style="padding:7px 14px;font-size:.82rem"><i class="fa-solid fa-arrow-left" style="margin-right:4px"></i>Back</button>
+    </div>
+  </nav>
+  <div class="min-h-screen flex items-center justify-center px-5 pt-16 pb-8">
+    <div class="auth-card w-full">
+      <div id="authLogin" class="hidden">
+        <div class="text-center mb-8 fade-up"><div style="width:50px;height:50px;border-radius:14px;background:var(--sageG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><i class="fa-solid fa-right-to-bracket" style="color:var(--sage);font-size:1.2rem"></i></div><h2 style="font-size:1.5rem;font-weight:700;margin-bottom:4px">Welcome Back</h2><p style="color:var(--muted);font-size:.88rem">Log in to access your study plans</p></div>
+        <div class="flex flex-col gap-4"><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Email</label><input type="email" id="loginEmail" class="inp" placeholder="you@example.com"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Password</label><input type="password" id="loginPass" class="inp" placeholder="Enter your password"></div><div id="loginErr" style="font-size:.82rem;color:var(--red);display:none"></div><button class="btn-p w-full justify-center" onclick="doLogin()" style="margin-top:4px">Log In <i class="fa-solid fa-arrow-right"></i></button></div>
+        <p class="text-center mt-6" style="font-size:.85rem;color:var(--muted)">Don't have an account? <a href="#" onclick="showAuthMode('signup');return false" style="color:var(--sage);text-decoration:none;font-weight:500">Sign up</a></p>
+      </div>
+      <div id="authSignup" class="hidden">
+        <div class="text-center mb-8 fade-up"><div style="width:50px;height:50px;border-radius:14px;background:var(--accentG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><i class="fa-solid fa-user-plus" style="color:var(--accent);font-size:1.1rem"></i></div><h2 style="font-size:1.5rem;font-weight:700;margin-bottom:4px">Create Your Account</h2><p style="color:var(--muted);font-size:.88rem">Free forever. No credit card needed.</p></div>
+        <div class="flex flex-col gap-4"><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Full Name</label><input type="text" id="signupName" class="inp" placeholder="Your name"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Email</label><input type="email" id="signupEmail" class="inp" placeholder="you@example.com"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Password</label><input type="password" id="signupPass" class="inp" placeholder="Min 6 characters"></div><div id="signupErr" style="font-size:.82rem;color:var(--red);display:none"></div><button class="btn-p w-full justify-center" onclick="doSignup()" style="margin-top:4px">Create Account <i class="fa-solid fa-arrow-right"></i></button></div>
+        <p class="text-center mt-6" style="font-size:.85rem;color:var(--muted)">Already have an account? <a href="#" onclick="showAuthMode('login');return false" style="color:var(--sage);text-decoration:none;font-weight:500">Log in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PLANNER PAGE ==================== -->
+<div class="view" id="viewPlanner">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-4xl mx-auto px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:11px"></i></div><span style="font-family:'Space Grotesk';font-weight:700;font-size:.92rem">StudyForge</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn-g" onclick="showView('viewDashboard')" style="padding:7px 14px;font-size:.8rem"><i class="fa-solid fa-grid-2" style="margin-right:3px"></i>Dashboard</button>
+        <button class="btn-d" onclick="doLogout()" style="padding:7px 14px;font-size:.8rem"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </nav>
+  <div class="max-w-3xl mx-auto px-5 pt-20 pb-12">
+    <div class="step-ind mb-10 max-w-md mx-auto"><div class="step-dot now" id="sd1">1</div><div class="step-line" id="sl1"></div><div class="step-dot" id="sd2">2</div><div class="step-line" id="sl2"></div><div class="step-dot" id="sd3">3</div><div class="step-line" id="sl3"></div><div class="step-dot" id="sd4">4</div></div>
+    <div class="step active" id="step1"><div class="text-center mb-8"><h2 style="font-size:1.6rem;font-weight:700;margin-bottom:4px">Exam Details</h2><p style="color:var(--muted);font-size:.9rem">Tell us about your target exam</p></div><div class="glass p-6 max-w-lg mx-auto"><div class="flex flex-col gap-4"><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Exam Name</label><input type="text" id="planExam" class="inp" placeholder="e.g. JEE Advanced, NEET, Final Exams"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Exam Date</label><input type="date" id="planDate" class="inp"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Daily Study Hours Available</label><div class="grid grid-cols-5 gap-2 mb-2"><button class="btn-g" style="padding:8px 0;justify-content:center;font-size:.82rem" onclick="setHours(2,this)">2h</button><button class="btn-s" style="padding:8px 0;justify-content:center;font-size:.82rem" onclick="setHours(4,this)">4h</button><button class="btn-g" style="padding:8px 0;justify-content:center;font-size:.82rem" onclick="setHours(6,this)">6h</button><button class="btn-g" style="padding:8px 0;justify-content:center;font-size:.82rem" onclick="setHours(8,this)">8h</button><button class="btn-g" style="padding:8px 0;justify-content:center;font-size:.82rem" onclick="setHours(10,this)">10h</button></div><input type="number" id="planHours" class="inp" value="4" min="1" max="16"></div><div><label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:5px">Study Goal (optional)</label><textarea id="planGoal" class="inp" rows="2" placeholder="e.g. Score above 90%" style="resize:none"></textarea></div></div><button class="btn-p w-full justify-center mt-6" onclick="goStep(2)">Continue <i class="fa-solid fa-arrow-right"></i></button></div></div>
+    <div class="step" id="step2"><div class="text-center mb-8"><h2 style="font-size:1.6rem;font-weight:700;margin-bottom:4px">Your Subjects</h2><p style="color:var(--muted);font-size:.9rem">Add subjects and their difficulty levels</p></div><div class="glass p-6 max-w-lg mx-auto"><div id="subjList" class="flex flex-col gap-3 mb-4"></div><div class="glass-s p-4 mb-4"><div class="grid grid-cols-3 gap-2 mb-3"><input type="text" id="newSubjName" class="inp" placeholder="Subject name" style="grid-column:span 2"><select id="newSubjDiff" class="inp"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div><button class="btn-s w-full justify-center" onclick="addPlanSubject()"><i class="fa-solid fa-plus"></i> Add Subject</button></div><div class="flex gap-3"><button class="btn-g flex-1 justify-center" onclick="goStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button><button class="btn-p flex-1 justify-center" id="step2Btn" onclick="goStep(3)" disabled>Continue <i class="fa-solid fa-arrow-right"></i></button></div></div></div>
+    <div class="step" id="step3"><div class="text-center py-20"><div style="width:56px;height:56px;border-radius:16px;background:var(--sageG);display:flex;align-items:center;justify-content:center;margin:0 auto 18px"><i class="fa-solid fa-brain" style="color:var(--sage);font-size:1.3rem;animation:pulse 1.2s infinite"></i></div><h2 style="font-size:1.5rem;font-weight:700;margin-bottom:6px">Generating Your Plan</h2><p id="genStatus" style="color:var(--muted);font-size:.9rem">Analyzing your inputs...</p><div class="prog-t mt-6 max-w-xs mx-auto" style="height:4px"><div class="prog-f" id="genBar" style="width:0%;background:linear-gradient(90deg,var(--sage),var(--teal))"></div></div></div></div>
+    <div class="step" id="step4"><div class="text-center mb-8"><div style="width:56px;height:56px;border-radius:16px;background:var(--greenG);display:flex;align-items:center;justify-content:center;margin:0 auto 14px"><i class="fa-solid fa-check" style="color:var(--green);font-size:1.3rem"></i></div><h2 style="font-size:1.6rem;font-weight:700;margin-bottom:4px">Your Plan is Ready</h2><p style="color:var(--muted);font-size:.9rem" id="planSummary"></p></div><div class="flex gap-3 justify-center mb-8"><button class="btn-p" onclick="showView('viewDashboard')"><i class="fa-solid fa-calendar-check"></i> Go to Dashboard</button><button class="btn-g" onclick="showView('viewProgress')"><i class="fa-solid fa-list-check"></i> Today's Tasks</button></div></div>
+  </div>
+</div>
+
+<!-- ==================== DASHBOARD PAGE ==================== -->
+<div class="view" id="viewDashboard">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-5xl mx-auto px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:11px"></i></div><span style="font-family:'Space Grotesk';font-weight:700;font-size:.92rem">StudyForge</span></div>
+      <div class="flex items-center gap-2">
+        <button class="btn-s" onclick="showView('viewProgress')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-check-circle" style="margin-right:3px"></i>Today</button>
+        <button class="btn-g" onclick="showView('viewPlanner')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-plus" style="margin-right:3px"></i>New Plan</button>
+        <button class="btn-g" onclick="showView('viewTimer')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-hourglass-half" style="margin-right:3px"></i>Timer</button>
+        <button class="btn-d" onclick="doLogout()" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </nav>
+  <div class="max-w-5xl mx-auto px-5 pt-20 pb-12">
+    <div class="mb-6 fade-up"><h2 style="font-size:1.8rem;font-weight:700" id="dashGreet">Hello</h2><p style="color:var(--muted);font-size:.92rem" id="dashSub">Here's your study overview</p></div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 fade-up" style="animation-delay:.1s"><div class="glass p-4 text-center"><i class="fa-solid fa-calendar-days" style="color:var(--accent);font-size:1rem;margin-bottom:6px;display:block"></i><div style="font-size:1.5rem;font-weight:700" id="statDays">0</div><div style="font-size:.7rem;color:var(--muted)">Days Left</div></div><div class="glass p-4 text-center"><i class="fa-solid fa-book" style="color:var(--sage);font-size:1rem;margin-bottom:6px;display:block"></i><div style="font-size:1.5rem;font-weight:700" id="statSubs">0</div><div style="font-size:.7rem;color:var(--muted)">Subjects</div></div><div class="glass p-4 text-center"><i class="fa-solid fa-check-double" style="color:var(--green);font-size:1rem;margin-bottom:6px;display:block"></i><div style="font-size:1.5rem;font-weight:700" id="statDone">0%</div><div style="font-size:.7rem;color:var(--muted)">Completed</div></div><div class="glass p-4 text-center"><i class="fa-solid fa-fire" style="color:var(--red);font-size:1rem;margin-bottom:6px;display:block"></i><div style="font-size:1.5rem;font-weight:700" id="statStreak">0</div><div style="font-size:.7rem;color:var(--muted)">Day Streak</div></div></div>
+    <div class="dash-nav mb-6 fade-up" style="animation-delay:.15s"><button class="dash-tab on" onclick="switchDashTab('overview',this)">Overview</button><button class="dash-tab" onclick="switchDashTab('schedule',this)">Schedule</button><button class="dash-tab" onclick="switchDashTab('tips',this)">Study Tips</button></div>
+    <div class="dash-panel active" id="dp-overview"><div class="grid md:grid-cols-2 gap-5"><div class="glass p-5"><h3 style="font-size:.95rem;font-weight:600;margin-bottom:12px"><i class="fa-solid fa-chart-pie" style="color:var(--accent);margin-right:6px"></i>Subject Progress</h3><div id="dashProgress" class="flex flex-col gap-4"></div></div><div><div class="glass p-5 mb-5"><h3 style="font-size:.95rem;font-weight:600;margin-bottom:12px"><i class="fa-solid fa-bolt" style="color:var(--warn);margin-right:6px"></i>Today's Snapshot</h3><div id="dashToday" class="flex flex-col gap-2"></div></div><div class="glass p-5"><h3 style="font-size:.95rem;font-weight:600;margin-bottom:12px"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);margin-right:6px"></i>AI Recommendations</h3><div id="dashRecs" class="flex flex-col gap-2"></div></div></div></div></div>
+    <div class="dash-panel" id="dp-schedule"><div id="dashSchedule" class="schedule-grid grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+    <div class="dash-panel" id="dp-tips"><div class="flex flex-col gap-4" id="dashTips"></div></div>
+  </div>
+</div>
+
+<!-- ==================== PROGRESS PAGE ==================== -->
+<div class="view" id="viewProgress">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:11px"></i></div><span style="font-family:'Space Grotesk';font-weight:700;font-size:.92rem">Today's Progress</span></div>
+      <div class="flex items-center gap-2"><button class="btn-g" onclick="showView('viewDashboard')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-grid-2" style="margin-right:3px"></i>Dashboard</button><button class="btn-g" onclick="showView('viewTimer')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-hourglass-half" style="margin-right:3px"></i>Timer</button><button class="btn-d" onclick="doLogout()" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-right-from-bracket"></i></button></div>
+    </div>
+  </nav>
+  <div class="max-w-2xl mx-auto px-5 pt-20 pb-12">
+    <div class="flex items-center justify-between mb-2"><div><h2 style="font-size:1.4rem;font-weight:700" id="progDate"></h2><p style="color:var(--muted);font-size:.82rem" id="progExam"></p></div></div>
+    <div class="glass p-5 mb-6"><div class="flex items-center justify-between mb-2"><span style="font-size:.85rem;font-weight:500">Today's Completion</span><span style="font-size:1.3rem;font-weight:700;color:var(--sage)" id="progPct">0%</span></div><div class="prog-t" style="height:8px"><div class="prog-f" id="progBar" style="width:0%;background:linear-gradient(90deg,var(--sage),var(--teal))"></div></div><div class="flex justify-between mt-2" style="font-size:.75rem;color:var(--muted)"><span id="progDone">0 completed</span><span id="progLeft">0 remaining</span></div></div>
+    <div id="progChecklist" class="flex flex-col gap-2.5"></div>
+    <div id="progEmpty" class="hidden text-center py-16" style="color:var(--muted)"><i class="fa-solid fa-party-horn" style="font-size:2.5rem;margin-bottom:12px;opacity:.2;display:block"></i><p style="font-size:1rem;font-weight:500;margin-bottom:4px">All Done for Today!</p><p style="font-size:.85rem">Great work. Use the Pomodoro timer for your next session.</p></div>
+    <div class="glass p-5 mt-6" style="border-left:3px solid var(--accent)"><p style="font-size:.9rem;font-style:italic;line-height:1.6" id="progQuote"></p><p style="font-size:.78rem;color:var(--muted);margin-top:6px" id="progQuoteAuth"></p></div>
+  </div>
+</div>
+
+<!-- ==================== TIMER PAGE (POMODORO) ==================== -->
+<div class="view" id="viewTimer">
+  <nav class="fixed top-0 left-0 right-0 z-50" style="background:rgba(7,10,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div class="max-w-3xl mx-auto px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#b8882e);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-leaf" style="color:#070a07;font-size:11px"></i></div><span style="font-family:'Space Grotesk';font-weight:700;font-size:.92rem">Focus Timer</span></div>
+      <div class="flex items-center gap-2"><button class="btn-g" onclick="showView('viewDashboard')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-grid-2" style="margin-right:3px"></i>Dashboard</button><button class="btn-g" onclick="showView('viewProgress')" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-list-check" style="margin-right:3px"></i>Tasks</button><button class="btn-d" onclick="doLogout()" style="padding:7px 12px;font-size:.78rem"><i class="fa-solid fa-right-from-bracket"></i></button></div>
+    </div>
+  </nav>
+  <div class="max-w-2xl mx-auto px-5 pt-28 pb-12">
+    <div class="glass p-8 text-center">
+      <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:4px">🍅 Pomodoro Timer</h2>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:30px">25 min focus → 5 min break → repeat</p>
+      
+      <div class="timer-circle">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-label" id="timerLabel">Focus Time</div>
+      </div>
+      
+      <div class="timer-btns">
+        <button class="btn-p" id="timerStartBtn" onclick="startTimer()" style="padding:10px 24px"><i class="fa-solid fa-play"></i> Start</button>
+        <button class="btn-g" id="timerPauseBtn" onclick="pauseTimer()" style="padding:10px 24px"><i class="fa-solid fa-pause"></i> Pause</button>
+        <button class="btn-g" id="timerResetBtn" onclick="resetTimer()" style="padding:10px 24px"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+      </div>
+      
+      <div class="timer-preset">
+        <button class="btn-s" onclick="setPreset(25, 'Focus Time')">25 min</button>
+        <button class="btn-s" onclick="setPreset(5, 'Break Time')">5 min</button>
+        <button class="btn-s" onclick="setPreset(15, 'Long Break')">15 min</button>
+      </div>
+      
+      <div class="mt-6 pt-4 border-t" style="border-color:var(--border)">
+        <p style="font-size:.8rem;color:var(--muted)"><i class="fa-solid fa-music"></i> Tip: Use headphones with lo-fi music for better focus</p>
+        <div id="timerHistory" style="margin-top:12px;font-size:.75rem;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======================== STATE ========================
+let USERS = {};
+let currentUser = null;
+let planSubjects = [];
+let planData = null;
+
+// Timer variables
+let timerInterval = null;
+let timerMinutes = 25;
+let timerSeconds = 0;
+let isTimerRunning = false;
+let timerType = "Focus Time";
+let focusSessions = 0;
+
+function loadTimerHistory(){ try{ return JSON.parse(localStorage.getItem('timerHistory_'+currentUser)) || {sessions:0, totalMinutes:0} }catch(e){ return {sessions:0, totalMinutes:0} } }
+function saveTimerHistory(hist){ if(currentUser) localStorage.setItem('timerHistory_'+currentUser, JSON.stringify(hist)); }
+
+function updateTimerDisplay(){
+  document.getElementById("timerDisplay").innerText = `${timerMinutes.toString().padStart(2,'0')}:${timerSeconds.toString().padStart(2,'0')}`;
+}
+function setPreset(minutes, type){
+  if(isTimerRunning){ clearInterval(timerInterval); isTimerRunning=false; }
+  timerMinutes = minutes;
+  timerSeconds = 0;
+  timerType = type;
+  document.getElementById("timerLabel").innerText = type;
+  updateTimerDisplay();
+}
+function startTimer(){
+  if(isTimerRunning) return;
+  isTimerRunning = true;
+  timerInterval = setInterval(() => {
+    if(timerMinutes === 0 && timerSeconds === 0){
+      // Timer complete
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      const hist = loadTimerHistory();
+      hist.sessions++;
+      hist.totalMinutes += (timerType === "Focus Time" ? 25 : (timerType === "Break Time" ? 5 : 15));
+      saveTimerHistory(hist);
+      document.getElementById("timerHistory").innerHTML = `🎯 Today: ${hist.sessions} focus sessions | ${hist.totalMinutes} min studied`;
+      toast(`✨ ${timerType} completed! ${timerType === "Focus Time" ? "Great job! Take a break." : "Ready for next focus session?"}`, 'success');
+      // Auto-switch to break if focus completed
+      if(timerType === "Focus Time"){
+        setPreset(5, "Break Time");
+      } else {
+        setPreset(25, "Focus Time");
+      }
+      return;
+    }
+    if(timerSeconds === 0){
+      timerMinutes--;
+      timerSeconds = 59;
+    } else {
+      timerSeconds--;
+    }
+    updateTimerDisplay();
+  }, 1000);
+}
+function pauseTimer(){
+  if(timerInterval){
+    clearInterval(timerInterval);
+    isTimerRunning = false;
+  }
+}
+function resetTimer(){
+  pauseTimer();
+  if(timerType === "Focus Time") setPreset(25, "Focus Time");
+  else if(timerType === "Break Time") setPreset(5, "Break Time");
+  else setPreset(25, "Focus Time");
+}
+
+function getUsers(){ try{ return JSON.parse(localStorage.getItem('sf_users')) || {} }catch(e){ return {} } }
+function saveUsers(){ try{ localStorage.setItem('sf_users', JSON.stringify(USERS)) }catch(e){} }
+function getUserData(){ if(!currentUser) return null; try{ return JSON.parse(localStorage.getItem('sf_data_'+currentUser)) }catch(e){ return null } }
+function saveUserData(data){ if(!currentUser) return; try{ localStorage.setItem('sf_data_'+currentUser, JSON.stringify(data)) }catch(e){} }
+
+function toast(msg, type='info'){
+  const c=document.getElementById('toastC'), t=document.createElement('div'); t.className='toast';
+  const ic={info:'fa-circle-info',success:'fa-circle-check',warning:'fa-triangle-exclamation',error:'fa-circle-xmark'};
+  const co={info:'var(--sage)',success:'var(--green)',warning:'var(--warn)',error:'var(--red)'};
+  t.innerHTML=`<i class="fa-solid ${ic[type]}" style="color:${co[type]}"></i>${msg}`;
+  c.appendChild(t); setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),250) }, 3000);
+}
+
+function showView(id, mode){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id === 'viewAuth') showAuthMode(mode || 'login');
+  if(id === 'viewDashboard') renderDashboard();
+  if(id === 'viewProgress') renderProgress();
+  if(id === 'viewPlanner') resetPlanner();
+  if(id === 'viewTimer'){
+    const hist = loadTimerHistory();
+    document.getElementById("timerHistory").innerHTML = `🎯 Today: ${hist.sessions} focus sessions | ${hist.totalMinutes} min studied`;
+  }
+}
+
+function showAuthMode(mode){
+  document.getElementById('authLogin').classList.toggle('hidden', mode !== 'login');
+  document.getElementById('authSignup').classList.toggle('hidden', mode !== 'signup');
+}
+
+function doSignup(){
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('signupPass').value;
+  const err = document.getElementById('signupErr');
+  if(!name || name.length < 2){ err.textContent='Please enter your name.'; err.style.display='block'; return; }
+  if(!email || !email.includes('@')){ err.textContent='Please enter a valid email.'; err.style.display='block'; return; }
+  if(pass.length < 6){ err.textContent='Password must be at least 6 characters.'; err.style.display='block'; return; }
+  USERS = getUsers();
+  if(USERS[email]){ err.textContent='An account with this email already exists.'; err.style.display='block'; return; }
+  USERS[email] = { name, email, pass: btoa(pass), created: new Date().toISOString() };
+  saveUsers();
+  currentUser = email;
+  saveUserData({ name, plans: [], streak: 0, lastStudyDate: null });
+  toast('Account created! Let\'s build your first plan.', 'success');
+  showView('viewPlanner');
+}
+
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginErr');
+  if(!email || !pass){ err.textContent='Please fill in all fields.'; err.style.display='block'; return; }
+  USERS = getUsers();
+  if(!USERS[email] || atob(USERS[email].pass) !== pass){ err.textContent='Invalid email or password.'; err.style.display='block'; return; }
+  currentUser = email;
+  localStorage.setItem('sf_lastUser', email);
+  toast('Welcome back, ' + USERS[email].name + '!', 'success');
+  const data = getUserData();
+  if(data && data.plans && data.plans.length > 0) showView('viewDashboard');
+  else showView('viewPlanner');
+}
+
+function doLogout(){
+  pauseTimer();
+  currentUser = null;
+  localStorage.removeItem('sf_lastUser');
+  toast('Logged out.', 'info');
+  showView('viewLanding');
+}
+
+function resetPlanner(){
+  planSubjects = [];
+  goStep(1);
+  renderPlanSubjects();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('planDate').setAttribute('min', today);
+  document.getElementById('planDate').value = '';
+  document.getElementById('planExam').value = '';
+  document.getElementById('planGoal').value = '';
+  document.getElementById('planHours').value = '4';
+}
+
+function setHours(h, btn){
+  document.getElementById('planHours').value = h;
+  btn.parentElement.querySelectorAll('button').forEach(b => { b.className = 'btn-g'; b.style.cssText = 'padding:8px 0;justify-content:center;font-size:.82rem' });
+  btn.className = 'btn-s'; btn.style.cssText = 'padding:8px 0;justify-content:center;font-size:.82rem';
+}
+
+function goStep(n){
+  if(n === 2){
+    if(!document.getElementById('planExam').value.trim()){ toast('Please enter your exam name.', 'warning'); return; }
+    if(!document.getElementById('planDate').value){ toast('Please select your exam date.', 'warning'); return; }
+    const days = daysBetween(new Date().toISOString().split('T')[0], document.getElementById('planDate').value);
+    if(days <= 0){ toast('Exam date must be in the future.', 'warning'); return; }
+  }
+  if(n === 3 && planSubjects.length === 0){ toast('Add at least one subject.', 'warning'); return; }
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+  for(let i = 1; i <= 4; i++){
+    const dot = document.getElementById('sd' + i);
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' now' : '');
+    if(i < n) dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:.7rem"></i>';
+    else dot.textContent = i;
+    if(i < 4){ const line = document.getElementById('sl' + i); line.className = 'step-line' + (i < n ? ' done' : ''); }
+  }
+  if(n === 3) generatePlan();
+}
+
+function addPlanSubject(){
+  const name = document.getElementById('newSubjName').value.trim();
+  if(!name){ toast('Enter a subject name.', 'warning'); return; }
+  if(planSubjects.find(s => s.name.toLowerCase() === name.toLowerCase())){ toast('Subject already added.', 'warning'); return; }
+  planSubjects.push({ name, difficulty: document.getElementById('newSubjDiff').value, hoursNeeded: 0 });
+  document.getElementById('newSubjName').value = '';
+  renderPlanSubjects();
+}
+
+function removePlanSubject(i){ planSubjects.splice(i, 1); renderPlanSubjects(); }
+
+function renderPlanSubjects(){
+  const el = document.getElementById('subjList');
+  const btn = document.getElementById('step2Btn');
+  btn.disabled = planSubjects.length === 0;
+  if(!planSubjects.length){ el.innerHTML = '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:16px 0">No subjects added yet.</p>'; return; }
+  el.innerHTML = planSubjects.map((s, i) => `<div class="glass-s p-3 flex items-center gap-3 slide-r"><div style="width:36px;height:36px;border-radius:9px;background:${s.difficulty==='hard'?'var(--redG)':s.difficulty==='medium'?'rgba(232,184,48,.08)':'var(--greenG)'};display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-book" style="font-size:.8rem;color:${s.difficulty==='hard'?'var(--red)':s.difficulty==='medium'?'var(--warn)':'var(--green)'}"></i></div><div style="flex:1"><div style="font-weight:600;font-size:.9rem">${escapeHtml(s.name)}</div><span class="tag tag-${s.difficulty}">${s.difficulty}</span></div><button onclick="removePlanSubject(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:4px"><i class="fa-solid fa-xmark" style="font-size:.9rem"></i></button></div>`).join('');
+}
+
+function escapeHtml(str){ return str.replace(/[&<>]/g, function(m){ if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
+
+function generatePlan(){
+  const exam = document.getElementById('planExam').value.trim();
+  const examDate = document.getElementById('planDate').value;
+  const dailyHours = Math.max(1, Math.min(16, parseInt(document.getElementById('planHours').value) || 4));
+  const goal = document.getElementById('planGoal').value.trim();
+  const totalDays = daysBetween(new Date().toISOString().split('T')[0], examDate);
+  const dw = { easy: 0.8, medium: 1.2, hard: 1.6 };
+  const totalWeight = planSubjects.reduce((s, sub) => s + dw[sub.difficulty], 0);
+  const totalStudyHours = totalDays * dailyHours;
+  planSubjects.forEach(sub => { const proportion = dw[sub.difficulty] / totalWeight; sub.hoursNeeded = Math.round(totalStudyHours * proportion * 10) / 10; sub.hoursCompleted = 0; });
+  const schedule = [];
+  for(let day = 0; day < totalDays; day++){
+    const date = futureDate(day);
+    const daySchedule = { day: day + 1, date, sessions: [], isRevision: false };
+    const isRevisionDay = (day > 0 && day % 7 === 0) || (day >= totalDays - 3);
+    if(isRevisionDay){
+      daySchedule.isRevision = true;
+      let timeLeft = dailyHours;
+      planSubjects.forEach(sub => {
+        if(timeLeft <= 0) return;
+        const hrs = Math.min(Math.round(dailyHours / planSubjects.length * 10) / 10, timeLeft);
+        const sh = 8 + dailyHours - timeLeft;
+        daySchedule.sessions.push({ id: `${day}-${sub.name}-rev`, subject: sub.name, topic: 'Full Revision', type: 'Revision', duration: hrs, startTime: fmtTime(sh), endTime: fmtTime(sh + hrs), completed: false });
+        timeLeft -= hrs;
+      });
+    } else {
+      let timeLeft = dailyHours;
+      const sorted = [...planSubjects].sort((a, b) => dw[b.difficulty] - dw[a.difficulty]);
+      if(day % 2 === 1) sorted.reverse();
+      sorted.forEach((sub, idx) => {
+        if(timeLeft <= 0.3) return;
+        let hrs = Math.round((sub.hoursNeeded / totalDays * dailyHours) * 10) / 10;
+        hrs = Math.max(0.5, Math.min(hrs, timeLeft));
+        const sh = 8 + dailyHours - timeLeft;
+        daySchedule.sessions.push({ id: `${day}-${sub.name}`, subject: sub.name, topic: sub.name + ' Study', type: 'Study', duration: hrs, startTime: fmtTime(sh), endTime: fmtTime(sh + hrs), completed: false });
+        timeLeft -= hrs;
+        if(timeLeft > 0.5 && idx < sorted.length - 1){
+          daySchedule.sessions.push({ id: `${day}-break-${idx}`, subject: 'Break', topic: 'Short Break', type: 'Break', duration: 0.25, startTime: fmtTime(sh + hrs), endTime: fmtTime(sh + hrs + 0.25), completed: false });
+          timeLeft -= 0.25;
+        }
+      });
+    }
+    schedule.push(daySchedule);
+  }
+  const statuses = ['Analyzing difficulty weights...','Calculating optimal time distribution...','Planning revision intervals...','Balancing daily workload...','Building your personalized schedule...'];
+  let si = 0; const bar = document.getElementById('genBar'); const status = document.getElementById('genStatus');
+  const interval = setInterval(() => { si++; if(si < statuses.length){ status.textContent = statuses[si]; bar.style.width = (si / statuses.length * 100) + '%'; } }, 350);
+  setTimeout(() => {
+    clearInterval(interval); bar.style.width = '100%';
+    planData = { exam, examDate, dailyHours, goal, subjects: JSON.parse(JSON.stringify(planSubjects)), schedule, created: new Date().toISOString() };
+    const data = getUserData(); if(!data.plans) data.plans = []; data.plans.push(planData); saveUserData(data);
+    setTimeout(() => {
+      goStep(4);
+      const totalSessions = schedule.reduce((s, d) => s + d.sessions.filter(x => x.type !== 'Break').length, 0);
+      const revisionDays = schedule.filter(d => d.isRevision).length;
+      document.getElementById('planSummary').innerHTML = `${totalDays} days, ${totalSessions} sessions, ${revisionDays} revision days — all tailored for ${escapeHtml(exam)}.`;
+    }, 400);
+  }, 2000);
+}
+
+function renderDashboard(){
+  const data = getUserData();
+  if(!data){ document.getElementById('dashGreet').innerHTML = 'Please log in'; return; }
+  const plans = data.plans || [];
+  const plan = plans[plans.length - 1];
+  document.getElementById('dashGreet').innerHTML = 'Hello, ' + (data.name || 'Student');
+  document.getElementById('dashSub').innerHTML = plan ? `Preparing for ${escapeHtml(plan.exam)}` : 'Create a plan to get started';
+  if(!plan){
+    document.getElementById('statDays').textContent = '—'; document.getElementById('statSubs').textContent = '0'; document.getElementById('statDone').textContent = '0%'; document.getElementById('statStreak').textContent = data.streak || '0';
+    document.getElementById('dashProgress').innerHTML = '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:20px 0">No active plan.</p>';
+    document.getElementById('dashToday').innerHTML = '<p style="color:var(--muted);font-size:.85rem">No plan yet.</p>';
+    document.getElementById('dashRecs').innerHTML = '<p style="color:var(--muted);font-size:.85rem">Create a plan first.</p>';
+    document.getElementById('dashSchedule').innerHTML = '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:40px 0">No schedule yet.</p>';
+    renderTips(); return;
+  }
+  const today = new Date().toISOString().split('T')[0];
+  const daysLeft = Math.max(0, daysBetween(today, plan.examDate));
+  document.getElementById('statDays').textContent = daysLeft;
+  document.getElementById('statSubs').textContent = plan.subjects.length;
+  document.getElementById('statStreak').textContent = data.streak || '0';
+  let totalSessions = 0, completedSessions = 0;
+  plan.schedule.forEach(day => { day.sessions.forEach(s => { if(s.type !== 'Break'){ totalSessions++; if(s.completed) completedSessions++; } }); });
+  const pct = totalSessions > 0 ? Math.round(completedSessions / totalSessions * 100) : 0;
+  document.getElementById('statDone').textContent = pct + '%';
+  const progEl = document.getElementById('dashProgress');
+  progEl.innerHTML = plan.subjects.map(sub => {
+    const subSessions = plan.schedule.reduce((s, d) => s + d.sessions.filter(x => x.subject === sub.name && x.type !== 'Break').length, 0);
+    const subDone = plan.schedule.reduce((s, d) => s + d.sessions.filter(x => x.subject === sub.name && x.completed && x.type !== 'Break').length, 0);
+    const subPct = subSessions > 0 ? Math.round(subDone / subSessions * 100) : 0;
+    const color = sub.difficulty === 'hard' ? 'var(--red)' : sub.difficulty === 'medium' ? 'var(--warn)' : 'var(--green)';
+    return `<div><div class="flex items-center justify-between mb-1.5"><div class="flex items-center gap-2"><span style="font-size:.85rem;font-weight:600">${escapeHtml(sub.name)}</span><span class="tag tag-${sub.difficulty}">${sub.difficulty}</span></div><span style="font-size:.8rem;color:var(--muted)">${subPct}%</span></div><div class="prog-t"><div class="prog-f" style="width:${subPct}%;background:${color}"></div></div></div>`;
+  }).join('');
+  const todayData = plan.schedule.find(d => d.date === today);
+  const todayEl = document.getElementById('dashToday');
+  if(todayData){
+    const todaySess = todayData.sessions.filter(s => s.type !== 'Break');
+    const todayDone = todaySess.filter(s => s.completed).length;
+    todayEl.innerHTML = `<div class="flex items-center justify-between" style="font-size:.85rem"><span style="color:var(--muted)">Today's sessions</span><span style="font-weight:600">${todayDone}/${todaySess.length}</span></div><div class="prog-t mt-1 mb-3"><div class="prog-f" style="width:${todaySess.length?Math.round(todayDone/todaySess.length*100):0}%;background:var(--sage)"></div></div>${todayData.isRevision ? '<div class="tip-card" style="font-size:.82rem"><i class="fa-solid fa-rotate" style="margin-right:4px"></i>Today is a <strong>revision day</strong> — review all subjects!</div>' : ''}${todaySess.slice(0,4).map(s => `<div class="flex items-center gap-2" style="font-size:.82rem;padding:4px 0;${s.completed?'text-decoration:line-through;opacity:.5':''}"><i class="fa-solid ${s.completed?'fa-check-circle':'fa-circle'}" style="color:${s.completed?'var(--green)':'var(--border)'};font-size:.7rem"></i><span>${escapeHtml(s.subject)}</span><span style="color:var(--muted);margin-left:auto;font-size:.75rem">${s.duration}h</span></div>`).join('')}${todaySess.length > 4 ? `<span style="font-size:.78rem;color:var(--muted)">+${todaySess.length-4} more sessions</span>` : ''}`;
+  } else { todayEl.innerHTML = daysLeft <= 0 ? '<p style="font-size:.85rem;color:var(--warn)">Exam date has passed.</p>' : '<p style="font-size:.85rem;color:var(--muted)">No sessions scheduled for today.</p>'; }
+  const recsEl = document.getElementById('dashRecs');
+  const recs = [];
+  if(daysLeft > 0 && daysLeft <= 7) recs.push({ icon: 'fa-clock', color: 'var(--danger)', msg: `Only ${daysLeft} days left! Focus on revision.` });
+  const weakSub = plan.subjects.filter(s => s.difficulty === 'hard');
+  if(weakSub.length) recs.push({ icon: 'fa-exclamation-circle', color: 'var(--warn)', msg: `Spend extra time on: ${weakSub.map(s=>escapeHtml(s.name)).join(', ')}.` });
+  if(pct < 30 && daysLeft > 14) recs.push({ icon: 'fa-chart-line', color: 'var(--sage)', msg: 'Early stages — build strong foundations.' });
+  if(pct >= 70) recs.push({ icon: 'fa-trophy', color: 'var(--accent)', msg: 'Great progress! Focus on mock tests.' });
+  if(data.streak >= 3) recs.push({ icon: 'fa-fire', color: 'var(--red)', msg: `${data.streak}-day streak! Keep going!` });
+  if(!recs.length) recs.push({ icon: 'fa-check-circle', color: 'var(--green)', msg: 'Everything looks good. Stay consistent!' });
+  recsEl.innerHTML = recs.map(r => `<div class="flex items-start gap-2" style="font-size:.82rem"><i class="fa-solid ${r.icon}" style="color:${r.color};margin-top:2px;flex-shrink:0"></i><span>${r.msg}</span></div>`).join('');
+  const schEl = document.getElementById('dashSchedule');
+  const upcoming = plan.schedule.filter(d => d.date >= today).slice(0,14);
+  schEl.innerHTML = upcoming.map(day => { const dn = new Date(day.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); const done = day.sessions.filter(s => s.completed && s.type !== 'Break').length; const total = day.sessions.filter(s => s.type !== 'Break').length; const dp = total > 0 ? Math.round(done/total*100) : 0; return `<div class="glass-s p-4 day-card" style="${day.isRevision?'border-left-color:var(--accent)':''}"><div class="flex items-center justify-between mb-2"><span style="font-weight:600;font-size:.88rem">${dn}</span>${day.isRevision ? '<span class="tag" style="background:var(--accentG);color:var(--accent)">Revision</span>' : ''}</div><div class="prog-t mb-2"><div class="prog-f" style="width:${dp}%;background:${dp===100?'var(--green)':'var(--sage)'}"></div></div><div style="font-size:.78rem;color:var(--muted)">${done}/${total} done</div></div>`; }).join('');
+  renderTips();
+}
+
+function renderTips(){
+  const tips = [{ title: 'Active Recall', body: 'Close notes and write down what you remember.', icon: 'fa-brain', color: 'var(--sage)' },{ title: 'Pomodoro Technique', body: '25 min study, 5 min break. Use the built-in timer!', icon: 'fa-hourglass-half', color: 'var(--accent)' },{ title: 'Spaced Repetition', body: 'Review at increasing intervals (1,3,7 days).', icon: 'fa-rotate', color: 'var(--teal)' },{ title: 'Teach to Learn', body: 'Explain concepts aloud as if teaching someone.', icon: 'fa-chalkboard-user', color: 'var(--warn)' }];
+  document.getElementById('dashTips').innerHTML = tips.map(t => `<div class="tip-card" style="border-left-color:${t.color}"><div class="flex items-center gap-2 mb-2"><i class="fa-solid ${t.icon}" style="color:${t.color}"></i><strong style="font-size:.9rem">${t.title}</strong></div><p style="font-size:.85rem;color:var(--muted);line-height:1.6">${t.body}</p></div>`).join('');
+}
+
+function switchDashTab(tab, btn){
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('dp-' + tab).classList.add('active');
+}
+
+const QUOTES = [{ text: '"The secret of getting ahead is getting started."', auth: 'Mark Twain' },{ text: '"It does not matter how slowly you go as long as you do not stop."', auth: 'Confucius' },{ text: '"Success is the sum of small efforts repeated day in and day out."', auth: 'Robert Collier' }];
+
+function renderProgress(){
+  const data = getUserData(); if(!data) return;
+  const plans = data.plans || []; const plan = plans[plans.length - 1];
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('progDate').innerHTML = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('progExam').innerHTML = plan ? `Preparing for ${escapeHtml(plan.exam)}` : 'No active plan';
+  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  document.getElementById('progQuote').innerHTML = q.text; document.getElementById('progQuoteAuth').innerHTML = '— ' + q.auth;
+  if(!plan){ document.getElementById('progChecklist').innerHTML = ''; document.getElementById('progEmpty').classList.remove('hidden'); document.getElementById('progPct').innerHTML = '0%'; document.getElementById('progBar').style.width = '0%'; return; }
+  const todayData = plan.schedule.find(d => d.date === today);
+  if(!todayData){ document.getElementById('progChecklist').innerHTML = ''; document.getElementById('progEmpty').classList.remove('hidden'); document.getElementById('progPct').innerHTML = '—'; document.getElementById('progBar').style.width = '0%'; return; }
+  const sessions = todayData.sessions.filter(s => s.type !== 'Break');
+  const done = sessions.filter(s => s.completed).length;
+  const pct = sessions.length > 0 ? Math.round(done / sessions.length * 100) : 0;
+  document.getElementById('progPct').innerHTML = pct + '%'; document.getElementById('progBar').style.width = pct + '%';
+  document.getElementById('progDone').innerHTML = done + ' completed'; document.getElementById('progLeft').innerHTML = (sessions.length - done) + ' remaining';
+  if(done === sessions.length && sessions.length > 0){ document.getElementById('progChecklist').innerHTML = ''; document.getElementById('progEmpty').classList.remove('hidden'); }
+  else { document.getElementById('progEmpty').classList.add('hidden'); document.getElementById('progChecklist').innerHTML = sessions.map(s => `<div class="check-item ${s.completed ? 'done' : ''}" onclick="toggleProgress('${s.id}')"><div class="check-box">${s.completed ? '<i class="fa-solid fa-check" style="font-size:.7rem;color:#070a07"></i>' : ''}</div><div style="flex:1"><div class="sess-t" style="font-weight:600;font-size:.9rem">${escapeHtml(s.subject)}</div><div style="font-size:.78rem;color:var(--muted)">${s.type} &middot; ${s.duration}h &middot; ${s.startTime} – ${s.endTime}</div></div>${s.type === 'Revision' ? '<span class="tag" style="background:var(--accentG);color:var(--accent)">Revision</span>' : ''}</div>`).join(''); }
+}
+
+function toggleProgress(sessionId){
+  const data = getUserData(); if(!data) return;
+  const plan = data.plans[data.plans.length - 1]; if(!plan) return;
+  const today = new Date().toISOString().split('T')[0];
+  const dayData = plan.schedule.find(d => d.date === today); if(!dayData) return;
+  for(const s of dayData.sessions){ if(s.id === sessionId){ s.completed = !s.completed; if(s.completed){ if(data.lastStudyDate !== today){ const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]; data.streak = data.lastStudyDate === yesterday ? (data.streak || 0) + 1 : 1; data.lastStudyDate = today; } const sub = plan.subjects.find(x => x.name === s.subject); if(sub) sub.hoursCompleted = (sub.hoursCompleted || 0) + s.duration; } break; } }
+  saveUserData(data); renderProgress(); const allDone = dayData.sessions.filter(x => x.type !== 'Break').every(x => x.completed);
+  if(allDone && dayData.sessions.some(x => x.type !== 'Break' && x.completed)) toast('All sessions completed! Amazing work! 🎉', 'success');
+}
+
+function futureDate(daysFromNow){ const d = new Date(); d.setDate(d.getDate() + daysFromNow); return d.toISOString().split('T')[0]; }
+function daysBetween(a, b){ return Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000)); }
+function fmtTime(h){ const hr = Math.floor(h), mn = Math.round((h - hr) * 60); const p = hr >= 12 ? 'PM' : 'AM'; const dh = hr > 12 ? hr - 12 : (hr === 0 ? 12 : hr); return `${dh}:${String(mn).padStart(2, '0')} ${p}`; }
+
+document.getElementById('newSubjName').addEventListener('keydown', e => { if(e.key === 'Enter') addPlanSubject(); });
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
+document.getElementById('signupPass').addEventListener('keydown', e => { if(e.key === 'Enter') doSignup(); });
+
+USERS = getUsers();
+const lastUser = localStorage.getItem('sf_lastUser');
+if(lastUser && USERS[lastUser]){ currentUser = lastUser; const data = getUserData(); if(data && data.plans && data.plans.length > 0) showView('viewDashboard'); else showView('viewPlanner'); }
+else { setPreset(25, "Focus Time"); }
+</script>
+</body>
+</html>
